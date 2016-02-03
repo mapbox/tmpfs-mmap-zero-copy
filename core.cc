@@ -1,52 +1,49 @@
-#include <boost/interprocess/file_mapping.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-
+#include <algorithm>
+#include <iterator>
 #include <exception>
+#include <stdexcept>
+#include <system_error>
 
 #include <cstdio>
-#include <cstdint>
 #include <cstdlib>
 
-
 #ifdef __unix__
-#include <unistd.h>   // POSIX
-#include <sys/mman.h> // MAP_PRIVATE, MAP_POPULATE
+#include <errno.h>    // errno
+#include <unistd.h>   // POSIX, sysconf
+#include <sys/mman.h> // mincore(2)
 #endif
 
-#include "jujd.h"
-
-const constexpr char* kFilePathReadable = "test-r.bin";
-const constexpr char* kFilePathWriteable = "test-w.bin";
-
-
-void mapped_file() {
-  using namespace boost::interprocess;
-
-  file_mapping mapping{kFilePathReadable, read_only};
-
-#ifdef __unix__
-  mapped_region region{mapping, read_only, 0, 0, nullptr, MAP_POPULATE};
-#else
-  mapped_region region{mapping, read_only};
-#endif
-
-  region.advise(mapped_region::advice_willneed);
-
-  std::printf("name: %s\n", mapping.get_name());
-  std::printf("size: %ju\n", ju(region.get_size()));
-  std::printf("page size: %ju\n", ju(region.get_page_size()));
-
-  std::printf("address: %p\n", region.get_address());
-}
+#include "mapped_file.h"
+#include "file_mapping.h"
 
 
 int main() try {
-  // mapped_source();
-  mapped_file();
+  // This uses Boost.Iostream's mapped_file abstraction.
+  // Does not support madvise, or anything more than just a simple mmap use-case.
+  // auto region = make_mapped_file();
+
+  // This uses Boost.Interprocess' file_mapping abstraction.
+  // Supports setting madvise via enum and passing flags to the underlying mmap.
+  const auto region = make_file_mapping();
+
+#ifdef __unix__
+  const auto page_size = ::sysconf(_SC_PAGESIZE);
+  if (page_size == -1)
+    throw std::system_error{errno, std::system_category()};
+
+  std::vector<unsigned char> core((region.get_size() + page_size - 1) / page_size);
+
+  const auto rv = ::mincore(region.get_address(), region.get_size(), core.data());
+  if (rv == -1)
+    throw std::system_error{errno, std::system_category()};
+
+  const std::size_t in_core = std::count_if(begin(core), end(core), [](const auto byte) { return byte & 1; });
+
+  std::printf("pages: %ju\n", ju(core.size()));
+  std::printf("in core: %ju\n", ju(in_core));
+#endif
+
 } catch (const std::exception& e) {
   std::fprintf(stderr, "Error: %s\n", e.what());
   return EXIT_FAILURE;
 }
-
-// mincore(2)
-// madvise(2)
