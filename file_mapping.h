@@ -13,12 +13,10 @@
 #include "jujd.h"
 
 
-inline auto make_file_mapping() {
-  const constexpr char* kFilePathReadable = "test-r.bin";
-
+inline auto make_file_mapping(const char* path) {
   using namespace boost::interprocess;
 
-  file_mapping mapping{kFilePathReadable, read_only};
+  file_mapping mapping{path, read_only};
 
 #ifdef __unix__
   mapped_region region{mapping, read_only, 0, 0, nullptr, MAP_POPULATE};

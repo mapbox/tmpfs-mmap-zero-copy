@@ -17,14 +17,17 @@
 #include "file_mapping.h"
 
 
-int main() try {
+int main(int argc, char** argv) try {
+  if (argc != 2)
+    return EXIT_FAILURE;
+
   // This uses Boost.Iostream's mapped_file abstraction.
   // Does not support madvise, or anything more than just a simple mmap use-case.
-  // auto region = make_mapped_file();
+  // auto region = make_mapped_file(argv[1]);
 
   // This uses Boost.Interprocess' file_mapping abstraction.
   // Supports setting madvise via enum and passing flags to the underlying mmap.
-  const auto region = make_file_mapping();
+  const auto region = make_file_mapping(argv[1]);
 
 #ifdef __unix__
   const auto page_size = ::sysconf(_SC_PAGESIZE);

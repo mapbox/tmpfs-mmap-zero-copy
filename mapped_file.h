@@ -10,12 +10,10 @@
 #include "jujd.h"
 
 
-inline auto make_mapped_file() {
-  const constexpr char* kFilePathReadable = "test-r.bin";
-
+inline auto make_mapped_file(const char* path) {
   using namespace boost::iostreams;
 
-  mapped_file mapping{kFilePathReadable, mapped_file::readonly};
+  mapped_file mapping{path, mapped_file::readonly};
 
   std::printf("open: %ju\n", ju(mapping.is_open()));
   std::printf("size: %ju\n", ju(mapping.size()));
