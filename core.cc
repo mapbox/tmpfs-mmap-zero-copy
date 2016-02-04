@@ -1,5 +1,6 @@
 #include <exception>
 
+#include <cstdio>
 #include <cstdlib>
 
 #include <boost/timer/timer.hpp>
@@ -16,6 +17,8 @@ int main(int argc, char** argv) try {
 
   // dump_to_binary(argv[1]);
 
+  boost::timer::cpu_timer loading;
+
   // 1/ read from file into heap
   // const auto vec = read_from_binary(argv[1]);
   // const auto first = vec.data();
@@ -23,19 +26,20 @@ int main(int argc, char** argv) try {
 
   // 2/ read directly through mmaped region
   const auto region = make_file_mapping(argv[1]);
-
-  // dump_mincore(region);
-
   const auto first = static_cast<const Blob*>(region.get_address());
   const auto bytes = region.get_size();
   const auto last = first + (bytes / sizeof(Blob));
 
-  {
-    boost::timer::auto_cpu_timer _;
+  loading.stop();
+  std::printf("Loading: %s", loading.format().c_str());
 
-    // access_seq(first, last);
-    access_rnd(first, last);
-  }
+  boost::timer::cpu_timer accessing;
+
+  access_seq(first, last);
+  // access_rnd(first, last);
+
+  accessing.stop();
+  std::printf("Accessing: %s", accessing.format().c_str());
 
 } catch (const std::exception& e) {
   std::fprintf(stderr, "Error: %s\n", e.what());
