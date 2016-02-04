@@ -5,11 +5,12 @@
 #include <algorithm>
 #include <random>
 
+#include "blob.h"
 #include "optimizer.h"
 
 
 inline void access_seq(const Blob* first, const Blob* last) {
-  auto x = std::count_if(first, last, [](Blob b) { return b.a == 42 and b.b == 42; });
+  auto x = std::accumulate(first, last, 0, [](std::size_t sum, Blob b) { return sum + (b.a + b.b); });
 
   escape(&x);
 }
@@ -25,9 +26,7 @@ inline void access_rnd(const Blob* first, const Blob* last) {
 
   for (std::size_t i{0}; i < distance / 4u; ++i) {
     auto at = dist(mt);
-
-    if (first[at].a == 42 and first[at].b == 42)
-      ++count;
+    count += first[at].a + first[at].b;
   }
 
   escape(&count);
