@@ -19,7 +19,8 @@ inline auto make_file_mapping(const char* path) {
   file_mapping mapping{path, read_only};
 
 #ifdef __unix__
-  mapped_region region{mapping, read_only, 0, 0, nullptr, MAP_POPULATE};
+  // mapped_region region{mapping, read_only, 0, 0, nullptr, MAP_POPULATE};
+  mapped_region region{mapping, read_only};
 #else
   mapped_region region{mapping, read_only};
 #endif
