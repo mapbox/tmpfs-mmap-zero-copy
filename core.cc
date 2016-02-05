@@ -7,6 +7,7 @@
 #include <boost/timer/timer.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/multi_array/multi_array_ref.hpp>
 
 #include "mapping.h"
 #include "mincore.h"
@@ -66,7 +67,7 @@ int main(int argc, char** argv) try {
     // 1/ read from file into heap
     boost::timer::cpu_timer loading;
     const auto vec = read_from_binary(path.c_str());
-    //const auto vec = read_from_binary_through_stream(path.c_str());
+    // const auto vec = read_from_binary_through_stream(path.c_str());
     const auto first = vec.data();
     const auto last = vec.data() + vec.size();
     loading.stop();
@@ -82,6 +83,11 @@ int main(int argc, char** argv) try {
     loading.stop();
     std::printf("Loading: %s", loading.format().c_str());
     run_access(access_pattern, first, last);
+
+    // Non-owning one-dimensional array_view wrapper around a memory range; iteratable, size, data, etc.
+    // http://www.boost.org/doc/libs/1_60_0/libs/multi_array/doc/reference.html#const_multi_array_ref
+    // boost::const_multi_array_ref<Blob, 1> array_view{first, boost::extents[last - first]};
+
   } else {
     std::fprintf(stderr, "Error: invalid memory type %s\n", memory_type);
     usage(argv[0]);
