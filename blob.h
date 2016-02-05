@@ -49,8 +49,14 @@ inline void dump_to_binary(const char* path) {
   std::vector<Blob> buffer(kNumBlobs);
   std::generate(begin(buffer), end(buffer), [&] { return Blob{dist(mt), dist(mt)}; });
 
-  (void)std::fwrite(buffer.data(), sizeof(Blob), buffer.size(), out.get());
-  (void)std::fflush(out.get());
+  const auto _ = std::fwrite(buffer.data(), sizeof(Blob), buffer.size(), out.get());
+  (void)_;
+
+  if (std::ferror(out.get()) != 0)
+    throw std::system_error{errno, std::system_category()};
+
+  if (std::fflush(out.get()) != 0)
+    throw std::system_error{errno, std::system_category()};
 }
 
 
@@ -62,7 +68,11 @@ inline auto read_from_binary(const char* path) {
 
   std::vector<Blob> buffer(kNumBlobs);
 
-  (void)std::fread(buffer.data(), sizeof(Blob), kNumBlobs, in.get());
+  const auto _ = std::fread(buffer.data(), sizeof(Blob), kNumBlobs, in.get());
+  (void)_;
+
+  if (std::ferror(in.get()) != 0)
+    throw std::system_error{errno, std::system_category()};
 
   return buffer;
 }

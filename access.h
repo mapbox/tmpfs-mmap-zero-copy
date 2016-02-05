@@ -10,7 +10,7 @@
 
 
 inline void access_seq(const Blob* first, const Blob* last) {
-  auto x = std::accumulate(first, last, 0, [](std::size_t sum, Blob b) { return sum + (b.a + b.b); });
+  auto x = std::accumulate(first, last, std::size_t{0}, [](std::size_t sum, Blob b) { return sum + b.a + b.b; });
 
   escape(&x);
 }

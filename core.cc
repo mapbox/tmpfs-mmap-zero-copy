@@ -1,62 +1,66 @@
 #include <exception>
+#include <string>
 
 #include <cstdio>
 #include <cstdlib>
-#include <iostream>
 
 #include <boost/timer/timer.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/filesystem/operations.hpp>
 
-#include "file_mapping.h"
+#include "mapping.h"
 #include "mincore.h"
 #include "blob.h"
 #include "access.h"
 
-static const constexpr std::size_t MAX_RUNS = 10;
+
+const constexpr auto kMaxRuns = 10u;
 
 template <typename Iter>
-void
-run_access(const char* pattern, Iter first, Iter last) {
+void run_access(const char* pattern, Iter first, Iter last) {
+  using namespace std::string_literals;
+
   std::string result;
 
-  if (pattern == std::string("seq")) {
+  if (pattern == "seq"s) {
     boost::timer::cpu_timer accessing;
-    for (auto idx = MAX_RUNS; idx > 0; --idx)
+    for (auto idx = kMaxRuns; idx != 0; --idx)
       access_seq(first, last);
     accessing.stop();
     result = accessing.format();
-  } else if (pattern == std::string("rnd")) {
+  } else if (pattern == "rnd"s) {
     boost::timer::cpu_timer accessing;
-    for (auto idx = MAX_RUNS; idx > 0; --idx)
+    for (auto idx = kMaxRuns; idx != 0; --idx)
       access_rnd(first, last);
     accessing.stop();
     result = accessing.format();
   } else {
-    std::printf("Error: invalid access pattern: %s\n", pattern);
+    std::fprintf(stderr, "Error: invalid access pattern: %s\n", pattern);
     return;
   }
 
   std::printf("Accessing: %s", result.c_str());
 }
 
-int
-main(int argc, char** argv) try {
-  if (argc != 4)
+
+int main(int argc, char** argv) try {
+  if (argc != 4) {
+    std::fprintf(stderr, "Usage: %s [ heap | mmap ] [ seq | rnd ] path\n", argv[0]);
     return EXIT_FAILURE;
-
-  auto memory_type = argv[1];
-  auto access_pattern = argv[2];
-  boost::filesystem::path path(argv[3]);
-
-  if (!boost::filesystem::exists(path)) {
-    std::printf("Dumping to %s...", path.c_str());
-    dump_to_binary(path.string().c_str());
-    std::printf(" ok.\n");
   }
 
+  const auto memory_type = argv[1];
+  const auto access_pattern = argv[2];
+  const boost::filesystem::path path(argv[3]);
 
-  if (memory_type == std::string("heap")) {
+  if (not boost::filesystem::exists(path)) {
+    std::printf("Dumping to %s\n", path.c_str());
+    dump_to_binary(path.string().c_str());
+  }
+
+  using namespace std::string_literals;
+
+  if (memory_type == "heap"s) {
     // 1/ read from file into heap
     boost::timer::cpu_timer loading;
     const auto vec = read_from_binary(path.c_str());
@@ -64,24 +68,16 @@ main(int argc, char** argv) try {
     const auto last = vec.data() + vec.size();
     loading.stop();
     std::printf("Loading: %s", loading.format().c_str());
-    //std::printf("Waiting before load...");
-    //std::cout << std::flush;
-    //sleep(10);
-    //std::printf(" ok.\n");
     run_access(access_pattern, first, last);
-  } else if (memory_type == std::string("mmap")) {
+  } else if (memory_type == "mmap"s) {
     // 2/ read directly through mmaped region
     boost::timer::cpu_timer loading;
-    const auto region = make_file_mapping(path.c_str());
+    const auto region = make_mapping(path.c_str());
     const auto first = static_cast<const Blob*>(region.get_address());
     const auto bytes = region.get_size();
     const auto last = first + (bytes / sizeof(Blob));
     loading.stop();
     std::printf("Loading: %s", loading.format().c_str());
-    //std::printf("Waiting before load...");
-    //std::cout << std::flush;
-    //sleep(10);
-    //std::printf(" ok.\n");
     run_access(access_pattern, first, last);
   } else {
     std::printf("Error: invalid memory type %s\n", memory_type);
