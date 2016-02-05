@@ -21,7 +21,8 @@ inline auto make_mapping(const char* path) {
   file_mapping mapping{path, read_only};
 
 #ifdef __unix__
-  mapped_region region{mapping, read_only, 0, 0, nullptr, MAP_POPULATE};
+  // mapped_region region{mapping, read_only, 0, 0, nullptr, MAP_POPULATE};
+  mapped_region region{mapping, read_only};
 
   if (::mlock(region.get_address(), region.get_size()) == -1)
     throw std::system_error{errno, std::system_category()};
