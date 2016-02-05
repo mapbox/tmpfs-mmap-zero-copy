@@ -42,10 +42,12 @@ void run_access(const char* pattern, Iter first, Iter last) {
   std::printf("Accessing: %s", result.c_str());
 }
 
+inline void usage(const char* path) { std::fprintf(stderr, "Usage: %s [ heap | mmap ] [ seq | rnd ] path\n", path); }
+
 
 int main(int argc, char** argv) try {
   if (argc != 4) {
-    std::fprintf(stderr, "Usage: %s [ heap | mmap ] [ seq | rnd ] path\n", argv[0]);
+    usage(argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -80,8 +82,8 @@ int main(int argc, char** argv) try {
     std::printf("Loading: %s", loading.format().c_str());
     run_access(access_pattern, first, last);
   } else {
-    std::printf("Error: invalid memory type %s\n", memory_type);
-    std::printf("./core [heap|mmap] [seq|rnd] PATH_TO_FILE");
+    std::fprintf(stderr, "Error: invalid memory type %s\n", memory_type);
+    usage(argv[0]);
     return EXIT_FAILURE;
   }
 
