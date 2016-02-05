@@ -66,6 +66,7 @@ int main(int argc, char** argv) try {
     // 1/ read from file into heap
     boost::timer::cpu_timer loading;
     const auto vec = read_from_binary(path.c_str());
+    //const auto vec = read_from_binary_through_stream(path.c_str());
     const auto first = vec.data();
     const auto last = vec.data() + vec.size();
     loading.stop();

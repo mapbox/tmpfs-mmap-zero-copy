@@ -3,8 +3,10 @@
 #include <cstdio>
 #include <cerrno>
 
+#include <ios>
 #include <memory>
 #include <vector>
+#include <fstream>
 #include <iterator>
 #include <algorithm>
 #include <stdexcept>
@@ -73,6 +75,21 @@ inline auto read_from_binary(const char* path) {
 
   if (std::ferror(in.get()) != 0)
     throw std::system_error{errno, std::system_category()};
+
+  return buffer;
+}
+
+
+inline auto read_from_binary_through_stream(const char* path) {
+  std::ifstream stream{path, std::ios::binary};
+
+  if (not stream)
+    throw std::runtime_error{"open failed"};
+
+  std::vector<Blob> buffer(kNumBlobs);
+
+  if (not stream.read(reinterpret_cast<char*>(buffer.data()), sizeof(Blob) * kNumBlobs))
+    throw std::runtime_error{"read failed"};
 
   return buffer;
 }
